@@ -1,0 +1,29 @@
+<mxfile host="dialang">
+    <diagram id="class-diag" name="Class Diagram">
+        <mxGraphModel grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" page="1" fold="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="class-diag-0"/>
+                <mxCell id="class-diag-1" parent="class-diag-0"/>
+{class_diag}
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="comm-diag" name="Communication Diagram">
+        <mxGraphModel grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="comm-diag-0"/>
+                <mxCell id="comm-diag-1" parent="comm-diag-0"/>
+{comm_diag}
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="seq-diag" name="Sequence Diagram">
+        <mxGraphModel grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="seq-diag-0"/>
+                <mxCell id="seq-diag-1" parent="seq-diag-0"/>
+{seq_diag}
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
