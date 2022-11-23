@@ -3,9 +3,9 @@
 Turn text files into draw.io class diagrams
 
 ## Future features
- * [] Sequence diagram
- * [] Communication diagram
- * [] Style modification
+ * [ ] Sequence diagram
+ * [ ] Communication diagram
+ * [ ] Style modification
 
 # Usage
 1. create a `input.txt` file
