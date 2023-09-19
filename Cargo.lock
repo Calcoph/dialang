@@ -31,14 +31,14 @@ checksum = "2c676a478f63e9fa2dd5368a42f28bba0d6c560b775f38583c8bbaa7fcd67c9c"
 
 [[package]]
 name = "dialang"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "diaparser",
 ]
 
 [[package]]
 name = "diaparser"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nom",
  "nom-locate",

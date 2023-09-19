@@ -1,81 +1,60 @@
-use diaparser::Expr;
+use std::collections::HashMap;
 
-use crate::Spanned;
+use crate::{Class, Attribute, Method};
 
-pub(crate) fn make_class_diag(tokens: Spanned<Expr>) -> String {
+pub(crate) fn make_class_diag(classes: HashMap<String, Class>) -> Vec<String> {
     let mut id = 2;
     let mut y = 25;
 
-    class_diag_from_tokens(&mut id, &mut y, tokens)
+    class_diag_from_classes(&mut id, &mut y, classes)
 }
 
-fn class_diag_from_tokens(id: &mut u32, y: &mut u32, tokens: Spanned<Expr>) -> String {
+fn class_diag_from_classes(id: &mut u32, y: &mut u32, classes: HashMap<String, Class>) -> Vec<String> {
     const Y_PADDING: u32 = 100;
     const X_PADDING: u32 = 15;
-    match tokens.0 {
-        Expr::Class { name, attributes, methods } => {
-            let attributes = get_attributes(attributes);
-            let methods = get_methods(methods);
-            let (a, y_tmp) = make_class(id, &name.0, &attributes, &methods, X_PADDING, *y);
-            *y = y_tmp + Y_PADDING;
+    let mut ret = Vec::new();
+    for class in classes.values() {
+        let Class { name, attributes, methods } = class;
+        let attributes = get_attributes(attributes);
+        let methods = get_methods(methods);
+        let (a, y_tmp) = make_class(id, name, attributes, methods, X_PADDING, *y);
+        *y = y_tmp + Y_PADDING;
 
-            a
-        },
-        Expr::ExprList(e) => {
-            let mut c = String::new();
-            for exp in e {
-                c += &class_diag_from_tokens(id, y, exp);
-            }
+        ret.push(a)
+    };
 
-            c
-        },
-        Expr::Error => todo!(),
-        _ => unreachable!()
-    }
+    ret
 }
 
-fn get_attributes(attributes: Vec<Spanned<Expr>>) -> Vec<String> {
+fn get_attributes(attributes: &[Attribute]) -> Vec<String> {
     let mut v = Vec::new();
     for att in attributes {
-        v.push(match att.0 {
-            Expr::Attribute { name, r#type } => {
-                match r#type {
-                    Some(r#type) => format!("{}: {}", name.0, r#type.0),
-                    None => name.0,
-                }
-            },
-            _ => unreachable!()
+        v.push(match &att.r#type {
+            Some(r#type) => format!("{}: {}", att.name, r#type),
+            None => att.name.clone(),
         })
     };
 
     v
 }
 
-fn get_methods(attributes: Vec<Spanned<Expr>>) -> Vec<String> {
+fn get_methods(attributes: &[Method]) -> Vec<String> {
     let mut v = Vec::new();
     for att in attributes {
-        v.push(match att.0 {
-            Expr::Method { name, parameters, ret_type } => {
-                match ret_type {
-                    Some(ret_type) => format!("{}({}): {}", name.0, get_param_string(parameters), ret_type.0),
-                    None => format!("{}({})", name.0, get_param_string(parameters)),
-                }
-            },
-            _ => unreachable!()
-        })
+        v.push(match &att.ret_type {
+            Some(ret_type) => format!("{}({}): {}", att.name, get_param_string(&att.parameters), ret_type),
+            None => format!("{}({})", att.name, get_param_string(&att.parameters)),
+        });
     };
 
     v
 }
 
-fn get_param_string(parameters: Vec<Spanned<Expr>>) -> String {
+fn get_param_string(parameters: &[Attribute]) -> String {
     parameters.into_iter()
-        .map(|exp| match exp.0 {
-            Expr::Attribute { name, r#type } => match r#type {
-                Some(r#type) => format!("{}: {}", name.0, r#type.0),
-                None => name.0,
-            },
-            _ => unreachable!()
+        .map(|att| match &att.r#type {
+                Some(r#type) => format!("{}: {}", att.name, r#type),
+                None => att.name.clone(),
         }).fold(String::new(), |l, r| {
             if l.len() > 0 {
                 format!("{l}, {r}")
@@ -85,7 +64,7 @@ fn get_param_string(parameters: Vec<Spanned<Expr>>) -> String {
         })
 }
 
-fn make_class(id: &mut u32, name: &str, attributes: &[String], methods: &[String], x_pos: u32, y_pos: u32) -> (String, u32) { // TODO: Calculate width
+fn make_class(id: &mut u32, name: &str, attributes: Vec<String>, methods: Vec<String>, x_pos: u32, y_pos: u32) -> (String, u32) { // TODO: Calculate width
     const START_HEIGHT: u32 = 26;
     const ATTR_HEIGHT: u32 = 26;
     const SEPARATOR_HEIGHT: u32 = 8;
@@ -96,7 +75,7 @@ fn make_class(id: &mut u32, name: &str, attributes: &[String], methods: &[String
 
     let mut y = START_HEIGHT;
 
-    for attr in attributes {
+    for attr in &attributes {
         class += &format!(
             include_str!("../../templates/cd-class/attribute.xml"),
             id=format!("class-diag-{m_id}"),
@@ -117,7 +96,7 @@ fn make_class(id: &mut u32, name: &str, attributes: &[String], methods: &[String
     m_id += 1;
     y += SEPARATOR_HEIGHT;
 
-    for method in methods {
+    for method in &methods {
         class += &format!(
             include_str!("../../templates/cd-class/method.xml"),
             id=format!("class-diag-{m_id}"),

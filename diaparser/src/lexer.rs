@@ -1,4 +1,4 @@
-use std::{cell::RefCell};
+use std::cell::RefCell;
 
 use nom::{
     character::complete::{
@@ -9,7 +9,7 @@ use nom::{
     },
     branch::alt as choice,
     bytes::complete::{
-        tag, take_until, take_till
+        tag, take_until
     },
     combinator::{
         recognize,

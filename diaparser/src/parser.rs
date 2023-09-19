@@ -1,19 +1,17 @@
 use nom::{
-    combinator::{
-        eof
-    }, InputTake, sequence::pair
+    combinator::eof, InputTake, sequence::pair
 };
-use nom_supreme::{error::{GenericErrorTree}};
+use nom_supreme::error::GenericErrorTree;
 
-use crate::{token::{TokSpan, Tokens, Spanned}, recovery_err::{ToRange, RecoveredError, TokError, TokResult}, Expr};
+use crate::{token::{TokSpan, Tokens, Spanned}, recovery_err::{ToRange, RecoveredError, TokError, TokResult}, Class, ParserError};
 
 mod statements;
 
 use statements::statements;
 
-fn parser<'a, 'b>(input: Tokens<'a, 'b>, empty_vec: &'a [TokSpan<'a, 'b>]) -> Spanned<Expr> {
+fn parser<'a, 'b>(input: Tokens<'a, 'b>, empty_vec: &'a [TokSpan<'a, 'b>]) -> Spanned<Result<Vec<Spanned<Class>>, ParserError>> {
     pair(
-        |input: Tokens<'a, 'b>| -> TokResult<'a, 'b, Spanned<Expr>> {match statements(input) {
+        |input: Tokens<'a, 'b>| -> TokResult<'a, 'b, Spanned<Result<Vec<Spanned<Class>>, ParserError>>> {match statements(input) {
             Ok(r) => Ok(r),
             Err(nom::Err::Error(e)) | Err(nom::Err::Failure(e)) => {
                 let input = recover_err(&e);
@@ -21,7 +19,7 @@ fn parser<'a, 'b>(input: Tokens<'a, 'b>, empty_vec: &'a [TokSpan<'a, 'b>]) -> Sp
                 let span = input.span();
                 let state = input.tokens[0].extra; 
                 state.0.report_error(RecoveredError(span.clone(), "Unexpected token".to_string()));
-                Ok((rest, (Expr::Error, span)))
+                Ok((rest, (Err(ParserError), span)))
             },
             Err(e) => Err(e)
         }},
@@ -38,10 +36,10 @@ fn recover_err<'a, 'b>(e: &TokError<'a, 'b>) -> Tokens<'a, 'b> {
 }
 
 // Hashmap contains the names of named expressions and their clones
-pub fn token_parse(tokens: Vec<TokSpan>) -> Spanned<Expr> {
+pub fn token_parse(tokens: Vec<TokSpan>) -> Spanned<Result<Vec<Spanned<Class>>, ParserError>> {
     let empty_vec = vec![];
     let ex = match tokens.len() {
-        0 => (Expr::Error, 0..1),
+        0 => (Err(ParserError), 0..1),
         _ => parser(Tokens::new(&tokens, tokens[0].extra.0), &empty_vec)
     };
     //let ex = (Expr::Dollar, 0..1);

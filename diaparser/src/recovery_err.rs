@@ -5,7 +5,7 @@ use nom_locate::LocatedSpan;
 //use nom::error::{ParseError, ErrorKind, FromExternalError};
 use nom_supreme::error::{ErrorTree, GenericErrorTree};
 
-use crate::{token::{TokSpan, Tokens, Spanned, Token}, Expr};
+use crate::{token::{TokSpan, Tokens, Spanned, Token}, ParserError};
 
 pub type StrResult<I, O, E=ErrorTree<I>> = Result<(I, O), nom::Err<E>>;
 pub type TokError<'a, 'b> = GenericErrorTree<Tokens<'a, 'b>, &'a [TokSpan<'a, 'b>], &'static str, Box<dyn Error + 'a>>;
@@ -51,11 +51,11 @@ impl<'a, 'b> ToRange for StrSpan<'a, 'b> {
     }
 }
 
-pub fn expression_recovery<'a, 'b: 'a, F>(mut func: F) -> impl FnMut(Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned<Expr>>
+pub fn expression_recovery<'a, 'b: 'a, F, Ex>(mut func: F) -> impl FnMut(Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned<Result<Ex, ParserError>>>
 where
-    F: Parser<Tokens<'a, 'b>, Spanned<Expr>, TokError<'a, 'b>>
+    F: Parser<Tokens<'a, 'b>, Spanned<Result<Ex, ParserError>>, TokError<'a, 'b>>
 {
-    move |input: Tokens<'a, 'b>| -> TokResult<'a, 'b, Spanned<Expr>> {
+    move |input: Tokens<'a, 'b>| -> TokResult<'a, 'b, Spanned<Result<Ex, ParserError>>> {
         match func.parse(input) {
             Ok(r) => Ok(r),
             Err(nom::Err::Error(e)) | Err(nom::Err::Failure(e)) => {
@@ -66,7 +66,7 @@ where
     }
 }
 
-fn recover_from_error<'a, 'b>(e: TokError<'a, 'b>) -> TokResult<'a, 'b, Spanned<Expr>> {
+fn recover_from_error<'a, 'b, Ex>(e: TokError<'a, 'b>) -> TokResult<'a, 'b, Spanned<Result<Ex, ParserError>>> {
     match e {
         GenericErrorTree::Stack { base: _, contexts } => {
             let (input, context) = contexts[contexts.len()-1];
@@ -97,7 +97,7 @@ fn recover_from_error<'a, 'b>(e: TokError<'a, 'b>) -> TokResult<'a, 'b, Spanned<
                 _ => unreachable!()
             };
 
-            Ok((rest, (Expr::Error, span)))
+            Ok((rest, (Err(ParserError), span)))
         },
         GenericErrorTree::Base { location, kind } => Err(nom::Err::Error(TokError::Base { location, kind })),
         GenericErrorTree::Alt(v) => {

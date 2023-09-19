@@ -1,9 +1,9 @@
 use std::{ops::Range, io::ErrorKind};
 
-use nom::{combinator::{map, map_res, opt}, bytes::complete::{tag, take}, sequence::{tuple, delimited, pair, preceded}, multi::{many0, separated_list0}};
+use nom::{combinator::{map_res, opt}, bytes::complete::{tag, take}, sequence::{tuple, delimited, pair, preceded, terminated}, multi::{many0, separated_list0}};
 use nom_supreme::{error::{ErrorTree, BaseErrorKind}, ParserExt};
 
-use crate::{token::{Tokens, Spanned, Token, Keyword}, recovery_err::{TokResult, expression_recovery, non_opt}, Expr, combinators::{map_with_span, spanned}};
+use crate::{token::{Tokens, Spanned, Token, Keyword}, recovery_err::{TokResult, expression_recovery, non_opt}, Expr, combinators::{map_with_span, spanned}, Class, Method, ParserError, Attribute};
 
 pub(crate) fn ident<'a, 'b>(input: Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned<String>> {
     map_res(
@@ -20,7 +20,7 @@ pub(crate) fn ident<'a, 'b>(input: Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned<
     )(input)
 }
 
-fn attribute<'a, 'b>(input: Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned<Expr>> {
+fn attribute<'a, 'b>(input: Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned<Attribute>> {
     map_with_span(
         pair(
             ident,
@@ -29,14 +29,14 @@ fn attribute<'a, 'b>(input: Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned<Expr>> 
                 non_opt(ident)
             )),
         ),
-        |(name, r#type), span| (Expr::Attribute {
+        |(name, r#type), span| (Attribute {
             name,
             r#type
         }, span)
     )(input)
 }
 
-fn method_definition<'a, 'b>(input: Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned<Expr>> {
+fn method_definition<'a, 'b>(input: Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned<Method>> {
     map_with_span(
         preceded(
             tag(Token::K(Keyword::Fn)),
@@ -50,19 +50,73 @@ fn method_definition<'a, 'b>(input: Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned
                 opt(preceded(
                     tag(Token::Separator(':')),
                     non_opt(ident)
+                )),
+                opt(preceded(
+                    tag(Token::Separator('{')),
+                    non_opt(terminated(
+                        method_body,
+                        tag(Token::Separator('}'))
+                    ))
                 ))
             ))
         ),
-        |(name, parameters, ret_type), span| (
-            Expr::Method {
+        |(name, parameters, ret_type, body), span| (
+            Method {
                 name,
                 parameters,
-                ret_type
+                ret_type,
+                body
             }, span)
     )(input)
 }
 
-fn class_definition<'a, 'b>(input: Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned<Expr>> {
+fn func_call<'a, 'b>(input: Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned<Expr>> {
+    map_with_span(
+        tuple((
+            ident,
+            opt(preceded(
+                tag(Token::Separator('.')),
+                non_opt(ident)
+            )),
+            delimited(
+                tag(Token::Separator('(')),
+                separated_list0(tag(Token::Separator(',')), ident),
+                tag(Token::Separator(')'))
+            )
+        )),
+        |(root, access, args), span| (Expr::FuncCall {
+            root,
+            access,
+            args
+        }, span)
+    )(input)
+}
+
+fn method_body<'a, 'b>(input: Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned<Expr>> {
+    map_with_span(
+        many0(map_with_span(
+            pair(
+                opt(terminated(
+                    ident,
+                    tag(Token::Op("="))
+                )),
+                func_call
+            ),
+            |(assignment, f_call), span| {
+                match assignment {
+                    Some(assignment) => (Expr::Assignment {
+                        name: assignment,
+                        expr: Box::new(f_call),
+                    }, span),
+                    None => f_call
+                }
+            }
+        )),
+        |funs, span| (Expr::ExprList(funs), span)
+    )(input)
+}
+
+fn class_definition<'a, 'b>(input: Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned<Class>> {
     map_with_span(
         pair(
             preceded(
@@ -78,7 +132,7 @@ fn class_definition<'a, 'b>(input: Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned<
                 tag(Token::Separator('}')).context("Closing brack")
             )
         ),
-        |(name, (attributes, methods)), span| (Expr::Class {
+        |(name, (attributes, methods)), span| (Class {
             name,
             attributes,
             methods
@@ -86,9 +140,12 @@ fn class_definition<'a, 'b>(input: Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned<
     )(input)
 }
 
-pub(crate) fn statements<'a, 'b>(input: Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned<Expr>> {
+pub(crate) fn statements<'a, 'b>(input: Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned<Result<Vec<Spanned<Class>>, ParserError>>> {
     expression_recovery(map_with_span(
         many0(class_definition),
-        |a, span| (Expr::ExprList(a), span)
+        |v, span| (
+                    Ok(v),
+                    span
+                )
     ))(input)
 }

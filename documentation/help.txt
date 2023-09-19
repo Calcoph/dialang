@@ -1,0 +1,7 @@
+DIALANG HELP
+  -h --help: Display help information
+  -c --class: Make class diagram
+  -m --comm: Make communication diagram
+  -s --seq: Make sequence diagram
+
+If neither -c, -m or -s is specified, -cms is assumed

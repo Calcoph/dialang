@@ -6,27 +6,42 @@ mod recovery_err;
 mod token;
 mod combinators;
 
+pub struct ParserError;
+
 #[derive(Debug)]
 pub enum Expr {
-    Class {
-        name: Spanned<String>,
-        attributes: Vec<Spanned<Self>>,
-        methods: Vec<Spanned<Self>>,
+    FuncCall {
+        root: Spanned<String>,
+        access: Option<Spanned<String>>,
+        args: Vec<Spanned<String>>,
     },
-    Attribute {
+    Assignment {
         name: Spanned<String>,
-        r#type: Option<Spanned<String>>
-    },
-    Method {
-        name: Spanned<String>,
-        parameters: Vec<Spanned<Self>>,
-        ret_type: Option<Spanned<String>>
+        expr: Box<Spanned<Self>>
     },
     ExprList(Vec<Spanned<Self>>),
     Error
 }
 
-pub fn tokenize(input: &str) -> Spanned<Expr> {
+pub struct Class {
+    pub name: Spanned<String>,
+    pub attributes: Vec<Spanned<Attribute>>,
+    pub methods: Vec<Spanned<Method>>,
+}
+
+pub struct Method {
+    pub name: Spanned<String>,
+    pub parameters: Vec<Spanned<Attribute>>,
+    pub ret_type: Option<Spanned<String>>,
+    pub body: Option<Spanned<Expr>>
+}
+
+pub struct Attribute {
+    pub name: Spanned<String>,
+    pub r#type: Option<Spanned<String>>
+}
+
+pub fn tokenize(input: &str) -> Spanned<Result<Vec<Spanned<Class>>, ParserError>> {
     let errors = std::cell::RefCell::new(Vec::new());
     let toks = lexer::lex(&input, &errors);
     parser::token_parse(toks)
