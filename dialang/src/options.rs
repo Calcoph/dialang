@@ -26,7 +26,9 @@ impl Default for Options {
 
 impl Options {
     pub(crate) fn load() -> Options {
-        let args: Vec<String> = env::args().collect();
+        let mut args: Vec<String> = env::args().collect();
+        args.remove(0); // remove binary name
+        let args = args; // make non mut
 
         let mut options = Options{
             ..Default::default()
