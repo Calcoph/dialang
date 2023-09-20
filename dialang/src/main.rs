@@ -13,13 +13,14 @@ mod class_diag;
 mod options;
 
 fn main() {
-    let input = std::fs::read_to_string("input.txt").unwrap();
-    let (tokens, _) = diaparser::tokenize(&input);
-
+    
     let opt = Options::load();
     if !opt.eval {
         exit(0)
     }
+
+    let input = std::fs::read_to_string(opt.input_path).unwrap();
+    let (tokens, _) = diaparser::tokenize(&input);
 
     let tokens = match tokens {
         Ok(t) => t,
@@ -41,8 +42,8 @@ fn main() {
         false => "".to_string(),
     };
 
-    //let file = format!(include_str!("../../templates/doc.xml"), seq_diag="", comm_diag="", class_diag=class_diag);
-    //std::fs::write("output.drawio", file).unwrap();
+    let file = format!(include_str!("../../templates/doc.xml"), seq_diag="", comm_diag="", class_diag=class_diag);
+    std::fs::write(opt.output_path, file).unwrap();
 }
 
 struct Method {
