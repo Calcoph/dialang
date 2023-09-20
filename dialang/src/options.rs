@@ -15,7 +15,7 @@ impl Default for Options {
     fn default() -> Options {
         Options {
             class_diag: true,
-            eval: false,
+            eval: true,
             comm_diag: false,
             seq_diag: false,
             input_path: PathBuf::from("input.txt"),
