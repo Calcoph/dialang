@@ -32,25 +32,40 @@ fn main() {
         .map(|class| (class.name.clone(), class))
         .collect::<HashMap<_,_>>();
 
-    let classes = make_class_diag(classes);
-    let class_diag = match opt.class_diag {
-        true => {
-            classes.iter()
-                .map(|c| c.to_string())
-                .collect::<String>()
-        },
-        false => "".to_string(),
+    let class_diag = if opt.class_diag {
+        let classes = make_class_diag(classes);
+        classes.into_iter()
+            .collect::<String>()
+    } else {
+        "".to_string()
     };
 
-    let file = format!(include_str!("../../templates/doc.xml"), seq_diag="", comm_diag="", class_diag=class_diag);
+    let seq_diag = if opt.seq_diag {
+        "".to_string()
+    } else {
+        "".to_string()
+    };
+
+    let comm_diag = if opt.comm_diag {
+        "".to_string()
+    } else {
+        "".to_string()
+    };
+
+    let file = format!(include_str!("../../templates/doc.xml"), seq_diag=seq_diag, comm_diag=comm_diag, class_diag=class_diag);
     std::fs::write(opt.output_path, file).unwrap();
+}
+
+enum Statement {
+    Assignment { name: String, expr: Vec<Statement> },
+    FuncCall { root: String, access: Option<String>, args: Vec<String> },
 }
 
 struct Method {
     name: String,
     parameters: Vec<Attribute>,
     ret_type: Option<String>,
-    body: Option<ParserExpr>
+    body: Vec<Statement>
 }
 
 struct Class {
@@ -119,8 +134,8 @@ fn clean_parser_method(method: ParserMethod) -> Method {
     };
 
     let body = match body {
-        Some((body, _)) => Some(body),
-        None => None,
+        Some((body, _)) => parserexpr_to_statement(body),
+        None => vec![],
     };
     
     Method {
@@ -128,5 +143,31 @@ fn clean_parser_method(method: ParserMethod) -> Method {
         parameters,
         ret_type,
         body
+    }
+}
+
+fn parserexpr_to_statement(expr: ParserExpr) -> Vec<Statement> {
+    match expr {
+        ParserExpr::FuncCall { root: (root, _), access, args } => vec![
+            Statement::FuncCall {
+                root,
+                access: access.map(|(access, _)| access),
+                args: args.into_iter().map(|(arg, _)| arg).collect()
+            }
+        ],
+        ParserExpr::Assignment { name: (name, _), expr } => vec![
+            Statement::Assignment {
+                name,
+                expr: parserexpr_to_statement(expr.0)
+            }
+        ],
+        ParserExpr::ExprList(expr_list) => {
+            let mut v = Vec::new();
+            for (expr, _) in expr_list {
+                v.extend(parserexpr_to_statement(expr).into_iter())
+            }
+            v
+        },
+        ParserExpr::Error => vec![],
     }
 }
