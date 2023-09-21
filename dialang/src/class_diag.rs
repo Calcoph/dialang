@@ -10,7 +10,7 @@ pub(crate) fn make_class_diag(classes: HashMap<String, Class>) -> Vec<String> {
 }
 
 fn class_diag_from_classes(id: &mut u32, y: &mut u32, classes: HashMap<String, Class>) -> Vec<String> {
-    const Y_PADDING: u32 = 100;
+    const Y_PADDING: u32 = 30;
     const X_PADDING: u32 = 15;
     let mut ret = Vec::new();
     for class in classes.values() {
@@ -18,7 +18,7 @@ fn class_diag_from_classes(id: &mut u32, y: &mut u32, classes: HashMap<String, C
         let attributes = get_attributes(attributes);
         let methods = get_methods(methods);
         let (a, y_tmp) = make_class(id, name, attributes, methods, X_PADDING, *y);
-        *y = y_tmp + Y_PADDING;
+        *y += y_tmp + Y_PADDING;
 
         ret.push(a)
     };
@@ -108,9 +108,7 @@ fn make_class(id: &mut u32, name: &str, attributes: Vec<String>, methods: Vec<St
         m_id += 1;
         y += METHOD_HEIGHT
     }
-
-    y += START_HEIGHT-METHOD_HEIGHT;
-
+    
     let class = format!(
         include_str!("../../templates/cd-class/title.xml"),
         id=format!("class-diag-{id}"),
