@@ -131,8 +131,8 @@ fn make_separator_bar(id: String, parent: String, y: u32) -> Tag {
     let value = "";
     let style = "line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;";
     let vertex = "1";
-    let width = 230;
-    let height = 8;
+    let width = CLASS_WIDTH;
+    let height = SEPARATOR_HEIGHT;
     let r#as = "geometry";
 
     xml_tag!(
@@ -159,8 +159,8 @@ fn make_attribute(id: String, value: String, parent: String, y: u32) -> Tag {
 fn make_method(id: String, value: String, parent: String, y: u32) -> Tag {
     let style = "text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;";
     let vertex = "1";
-    let width = 230;
-    let height = 26;
+    let width = CLASS_WIDTH;
+    let height = METHOD_HEIGHT;
     let r#as = "geometry";
 
     xml_tag!(
@@ -173,11 +173,12 @@ fn make_method(id: String, value: String, parent: String, y: u32) -> Tag {
 fn make_class_title(id: String, value: &str, parent: &str, x: u32, y: u32, height: u32) -> Tag {
     let style = "swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;";
     let vertex = "1";
+    let width = CLASS_WIDTH;
     let r#as = "geometry";
 
     xml_tag!(
         <mxCell id={id} value={value} style={style} vertex={vertex} parent={parent}>
-            <mxGeometry x={x} y={y} width={CLASS_WIDTH} height={height} as={r#as}/>
+            <mxGeometry x={x} y={y} width={width} height={height} as={r#as}/>
         </mxCell>
     )
 }
