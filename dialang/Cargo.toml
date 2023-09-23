@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 diaparser = { path = "../diaparser" }
+inline-xml = "0.3.2"

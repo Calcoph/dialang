@@ -1,6 +1,14 @@
 use std::collections::HashMap;
 
+use inline_xml::{xml_tag, Tag};
+
 use crate::{Class, Attribute, Method};
+
+const START_HEIGHT: u32 = 26;
+const ATTR_HEIGHT: u32 = 26;
+const SEPARATOR_HEIGHT: u32 = 8;
+const METHOD_HEIGHT: u32 = 26;
+const CLASS_WIDTH: u32 = 230;
 
 pub(crate) fn make_class_diag(classes: HashMap<String, Class>) -> Vec<String> {
     let mut id = 2;
@@ -65,62 +73,111 @@ fn get_param_string(parameters: &[Attribute]) -> String {
 }
 
 fn make_class(id: &mut u32, name: &str, attributes: Vec<String>, methods: Vec<String>, x_pos: u32, y_pos: u32) -> (String, u32) { // TODO: Calculate width
-    const START_HEIGHT: u32 = 26;
-    const ATTR_HEIGHT: u32 = 26;
-    const SEPARATOR_HEIGHT: u32 = 8;
-    const METHOD_HEIGHT: u32 = 26;
-    const WIDTH: u32 = 230;
-    let mut class = String::new();
+    let mut class_v = Vec::new();
     let mut m_id = *id+1;
 
     let mut y = START_HEIGHT;
 
-    for attr in &attributes {
-        class += &format!(
-            include_str!("../../templates/cd-class/attribute.xml"),
-            id=format!("class-diag-{m_id}"),
-            value=attr,
-            parent=format!("class-diag-{id}"),
-            y=y
+    for attr in attributes {
+        let attrib = make_attribute(
+            format!("class-diag-{m_id}"),
+            attr,
+            format!("class-diag-{id}"),
+            y
         );
+        class_v.push(attrib);
 
         m_id += 1;
         y += ATTR_HEIGHT
     }
-    class += &format!(
-        include_str!("../../templates/cd-class/separator-bar.xml"),
-        id=format!("class-diag-{m_id}"),
-        parent=format!("class-diag-{id}"),
-        y=y
-    );
+    class_v.push(make_separator_bar(
+        format!("class-diag-{m_id}"),
+        format!("class-diag-{id}"),
+        y
+    ));
     m_id += 1;
     y += SEPARATOR_HEIGHT;
 
-    for method in &methods {
-        class += &format!(
-            include_str!("../../templates/cd-class/method.xml"),
-            id=format!("class-diag-{m_id}"),
-            value=method,
-            parent=format!("class-diag-{id}"),
-            y=y
-        );
+    for method in methods {
+        class_v.push(make_method(
+            format!("class-diag-{m_id}"),
+            method,
+            format!("class-diag-{id}"),
+            y
+        ));
 
         m_id += 1;
         y += METHOD_HEIGHT
     }
-    
-    let class = format!(
-        include_str!("../../templates/cd-class/title.xml"),
-        id=format!("class-diag-{id}"),
-        value=name,
-        parent="class-diag-1",
-        x=x_pos,
-        y=y_pos,
-        width=WIDTH,
-        height=y
-    ) + &class;
+    let class_title = make_class_title(
+        format!("class-diag-{id}"),
+        name,
+        "class-diag-1",
+        x_pos,
+        y_pos,
+        y
+    );
+
+    let class = class_v.into_iter()
+        .map(|elem| elem.to_string())
+        .fold(class_title.to_string(), |old_str, new_elem| old_str + &new_elem);
 
     *id = m_id;
 
     (class, y)
+}
+
+fn make_separator_bar(id: String, parent: String, y: u32) -> Tag {
+    let value = "";
+    let style = "line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;";
+    let vertex = "1";
+    let width = 230;
+    let height = 8;
+    let r#as = "geometry";
+
+    xml_tag!(
+        <mxCell id={id} value={value} style={style} vertex={vertex} parent={parent}>
+            <mxGeometry y={y} width={width} height={height} as={r#as}/>
+        </mxCell>
+    )
+}
+
+fn make_attribute(id: String, value: String, parent: String, y: u32) -> Tag {
+    let style = "text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;";
+    let vertex = "1";
+    let width = CLASS_WIDTH;
+    let height = ATTR_HEIGHT;
+    let r#as = "geometry";
+
+    xml_tag!(
+        <mxCell id={id} value={value} style={style} vertex={vertex} parent={parent}>
+            <mxGeometry y={y} width={width} height={height} as={r#as}/>
+        </mxCell>
+    )
+}
+
+fn make_method(id: String, value: String, parent: String, y: u32) -> Tag {
+    let style = "text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;";
+    let vertex = "1";
+    let width = 230;
+    let height = 26;
+    let r#as = "geometry";
+
+    xml_tag!(
+        <mxCell id={id} value={value} style={style} vertex={vertex} parent={parent}>
+            <mxGeometry y={y} width={width} height={height} as={r#as}/>
+        </mxCell>
+    )
+}
+
+fn make_class_title(id: String, value: &str, parent: &str, x: u32, y: u32, height: u32) -> Tag {
+    let style = "swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;";
+    let vertex = "1";
+    let r#as = "geometry";
+
+    xml_tag!(
+        <mxCell id={id} value={value} style={style} vertex={vertex} parent={parent}>
+            <mxGeometry x={x} y={y} width={CLASS_WIDTH} height={height} as={r#as}/>
+        </mxCell>
+    )
 }
