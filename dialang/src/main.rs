@@ -155,7 +155,7 @@ fn parserexpr_to_statement(expr: ParserExpr) -> Vec<Statement> {
                 args: args.into_iter().map(|(arg, _)| arg).collect()
             }
         ],
-        ParserExpr::Assignment { name: (name, _), expr } => vec![
+        ParserExpr::Assignment { name: (name, _), expr, r#type } => vec![
             Statement::Assignment {
                 name,
                 expr: parserexpr_to_statement(expr.0)

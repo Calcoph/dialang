@@ -97,16 +97,23 @@ fn method_body<'a, 'b>(input: Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned<Expr>
         many0(map_with_span(
             pair(
                 opt(terminated(
-                    ident,
+                    pair(
+                        ident,
+                        opt(preceded(
+                            tag(Token::Separator(':')),
+                            ident
+                        )),
+                    ),
                     tag(Token::Op("="))
                 )),
                 func_call
             ),
             |(assignment, f_call), span| {
                 match assignment {
-                    Some(assignment) => (Expr::Assignment {
+                    Some((assignment, r#type)) => (Expr::Assignment {
                         name: assignment,
                         expr: Box::new(f_call),
+                        r#type: r#type,
                     }, span),
                     None => f_call
                 }
