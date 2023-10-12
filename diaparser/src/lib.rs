@@ -16,6 +16,7 @@ pub enum Expr {
         args: Vec<Spanned<String>>,
     },
     Assignment {
+        r#type: Option<Spanned<String>>,
         name: Spanned<String>,
         expr: Box<Spanned<Self>>
     },
