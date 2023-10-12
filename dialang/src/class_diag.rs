@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use inline_xml::{xml_tag, Tag};
 
-use crate::{Class, Attribute, Method};
+use crate::{Class, Attribute, Method, style::{Style, BaseStyle, Alignment, VerticalAlignment}};
 
 const START_HEIGHT: u32 = 26;
 const ATTR_HEIGHT: u32 = 26;
@@ -129,7 +129,7 @@ fn make_class(id: &mut u32, name: &str, attributes: Vec<String>, methods: Vec<St
 
 fn make_separator_bar(id: String, parent: String, y: u32) -> Tag {
     let value = "";
-    let style = "line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;";
+    let style = Style::default_line().to_string();
     let vertex = "1";
     let width = CLASS_WIDTH;
     let height = SEPARATOR_HEIGHT;
@@ -143,7 +143,7 @@ fn make_separator_bar(id: String, parent: String, y: u32) -> Tag {
 }
 
 fn make_attribute(id: String, value: String, parent: String, y: u32) -> Tag {
-    let style = "text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;";
+    let style = Style::default_text().to_string();
     let vertex = "1";
     let width = CLASS_WIDTH;
     let height = ATTR_HEIGHT;
@@ -157,7 +157,7 @@ fn make_attribute(id: String, value: String, parent: String, y: u32) -> Tag {
 }
 
 fn make_method(id: String, value: String, parent: String, y: u32) -> Tag {
-    let style = "text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;";
+    let style = Style::default_text().to_string();
     let vertex = "1";
     let width = CLASS_WIDTH;
     let height = METHOD_HEIGHT;
@@ -171,7 +171,7 @@ fn make_method(id: String, value: String, parent: String, y: u32) -> Tag {
 }
 
 fn make_class_title(id: String, value: &str, parent: &str, x: u32, y: u32, height: u32) -> Tag {
-    let style = "swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;";
+    let style = Style::default_swimlane().to_string();
     let vertex = "1";
     let width = CLASS_WIDTH;
     let r#as = "geometry";

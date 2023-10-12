@@ -9,11 +9,12 @@ use diaparser::Attribute as ParserAttribute;
 
 use crate::class_diag::make_class_diag;
 
+mod seq_diag;
 mod class_diag;
 mod options;
+mod style;
 
 fn main() {
-    
     let opt = Options::load();
     if !opt.eval {
         exit(0)
@@ -105,7 +106,7 @@ fn clean_parser_attribute(attribute: ParserAttribute) -> Attribute {
         name: (name, _),
         r#type,
     } = attribute;
-    
+
     let r#type = match r#type {
         Some((ty, _)) => Some(ty),
         None => None,
@@ -127,7 +128,7 @@ fn clean_parser_method(method: ParserMethod) -> Method {
 
     let parameters = parameters.into_iter()
         .map(|(attr, _)| clean_parser_attribute(attr)).collect();
-    
+
     let ret_type = match ret_type {
         Some((ty, _)) => Some(ty),
         None => None,
@@ -137,7 +138,7 @@ fn clean_parser_method(method: ParserMethod) -> Method {
         Some((body, _)) => parserexpr_to_statement(body),
         None => vec![],
     };
-    
+
     Method {
         name,
         parameters,
