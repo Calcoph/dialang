@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 #[derive(Debug, Clone)]
 pub struct Style {
-    base_style: BaseStyle,
+    base_style: Option<BaseStyle>,
     stroke_color: Option<()>,
     stroke_width: Option<u32>,
     fill_color: Option<()>,
@@ -29,38 +29,43 @@ pub struct Style {
 }
 
 impl Style {
-    pub fn new(base_style: BaseStyle) -> StyleBuilder {
-        StyleBuilder::new(base_style)
+    pub fn new() -> StyleBuilder {
+        StyleBuilder::new()
     }
 
     pub fn to_string(self) -> String {
-        let mut string = self.base_style.to_string() + ";";
+        let mut string = "".to_string();
+        if let Some(base_style) = self.base_style {
+            string += &format!("{base_style};");
+        }
 
         if let Some(font_style) = self.font_style {
             string += &format!("fontStyle={font_style};")
         }
 
-        if self.base_style.stroke_color_able() {
-            if let Some(stroke_color) = self.stroke_color {
-                todo!();
-                string += &format!("strokeColor=none;")
-            } else {
-                string += &format!("strokeColor=none;")
+        if let Some(base_style) = self.base_style {
+            if base_style.stroke_color_able() {
+                if let Some(stroke_color) = self.stroke_color {
+                    todo!();
+                    string += &format!("strokeColor=none;")
+                } else {
+                    string += &format!("strokeColor=none;")
+                }
             }
-        }
 
-        if self.base_style.stroke_width_able() {
-            if let Some(stroke_width) = self.stroke_width {
-                string += &format!("strokeWidth={stroke_width};")
+            if base_style.stroke_width_able() {
+                if let Some(stroke_width) = self.stroke_width {
+                    string += &format!("strokeWidth={stroke_width};")
+                }
             }
-        }
 
-        if self.base_style.fill_color_able() {
-            if let Some(fill_color) = self.fill_color {
-                todo!();
-                string += &format!("fillColor=none;")
-            } else {
-                string += &format!("fillColor=none;")
+            if base_style.fill_color_able() {
+                if let Some(fill_color) = self.fill_color {
+                    todo!();
+                    string += &format!("fillColor=none;")
+                } else {
+                    string += &format!("fillColor=none;")
+                }
             }
         }
 
@@ -97,16 +102,18 @@ impl Style {
             string += &format!("labelPosition={label_position};")
         }
 
-        if self.base_style.points_able() {
-            let mut points = self.points.into_iter()
-                .fold("[".to_string(), |old, [x,y]| {
-                    format!("{old}[{x},{y}],")
-                });
-            if points.len() > 1 {
-                points.pop();
+        if let Some(base_style) = self.base_style {
+            if base_style.points_able() {
+                let mut points = self.points.into_iter()
+                    .fold("[".to_string(), |old, [x,y]| {
+                        format!("{old}[{x},{y}],")
+                    });
+                if points.len() > 1 {
+                    points.pop();
+                }
+                points += "]";
+                string += &format!("points={points};")
             }
-            points += "]";
-            string += &format!("points={points};")
         }
 
         if let Some(port_constraint) = self.port_constraint {
@@ -158,7 +165,8 @@ impl Style {
     }
 
     pub fn default_line() -> Style {
-        let style = StyleBuilder::new(BaseStyle::Line)
+        let style = StyleBuilder::new()
+            .with_base_style(BaseStyle::Line)
             .with_stroke_width(1)
             .with_alignment(Alignment::Left)
             .with_vertical_alignment(VerticalAlignment::Middle)
@@ -176,7 +184,8 @@ impl Style {
     }
 
     pub fn default_text() -> Style {
-        let style = StyleBuilder::new(BaseStyle::Text)
+        let style = StyleBuilder::new()
+            .with_base_style(BaseStyle::Text)
             .with_alignment(Alignment::Left)
             .with_vertical_alignment(VerticalAlignment::Top)
             .with_spacing_left(4)
@@ -194,7 +203,8 @@ impl Style {
 
     pub fn default_swimlane() -> Style {
         //"swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;"
-        let style = StyleBuilder::new(BaseStyle::SwimLane)
+        let style = StyleBuilder::new()
+            .with_base_style(BaseStyle::SwimLane)
             .with_font_style(1)
             .with_alignment(Alignment::Center)
             .with_vertical_alignment(VerticalAlignment::Top)
@@ -213,6 +223,77 @@ impl Style {
 
         style
     }
+
+    pub fn default_actor() -> Style {
+        let style = StyleBuilder::new()
+            .with_shape(Shape::UMLActor)
+            .with_vertical_label_position(RelativePosition::Bottom)
+            .with_vertical_alignment(VerticalAlignment::Top)
+            .with_html(true)
+            .with_outline_connect(false)
+            .build();
+
+        debug_assert_eq!(style.clone().to_string(), "shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;");
+
+        style
+    }
+
+    pub fn default_seq_class() -> Style {
+        let style = StyleBuilder::new()
+            .with_rounded(false)
+            .with_white_space(WhiteSpace::Wrap)
+            .with_html(true)
+            .build();
+
+        debug_assert_eq!(style.clone().to_string(), "rounded=0;whiteSpace=wrap;html=1;");
+
+        style
+    }
+
+    pub(crate) fn default_lifetime_line() -> Style {
+        let style = StyleBuilder::new()
+            .with_html(true)
+            .with_entryx(0.5)
+            .with_entryy(1.0)
+            .with_entrydx(0.0)
+            .with_entrydy(0.0)
+            .build();
+
+        debug_assert_eq!(style.clone().to_string(), "endArrow=none;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;");
+
+        style
+    }
+
+    pub(crate) fn default_call_arrow() -> Style {
+        let style = StyleBuilder::new()
+            .build();
+
+        debug_assert_eq!(style.clone().to_string(), "endArrow=classic;html=1;entryX=0.25;entryY=0;entryDx=0;entryDy=0;");
+
+        style
+    }
+
+    pub(crate) fn default_call_text() -> Style {
+        let style = StyleBuilder::new()
+            .build();
+
+        debug_assert_eq!(style.clone().to_string(), "edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];");
+
+        style
+    }
+
+    pub(crate) fn default_return_arrow() -> Style {
+        let style = StyleBuilder::new()
+            .build();
+
+        debug_assert_eq!(style.clone().to_string(), "endArrow=classic;html=1;exitX=0;exitY=1;exitDx=0;exitDy=0;dashed=1;");
+
+        style
+    }
+
+    pub(crate) fn default_return_text() -> Style {
+        Self::default_call_text()
+    }
 }
 
 fn bool_to_num(b: bool) -> u32 {
@@ -221,6 +302,16 @@ fn bool_to_num(b: bool) -> u32 {
     } else {
         0
     }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum WhiteSpace {
+    Wrap
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum Shape {
+    UMLActor
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -306,13 +397,15 @@ impl Display for VerticalAlignment {
 
 #[derive(Debug, Clone, Copy)]
 pub enum RelativePosition {
-    Right
+    Right,
+    Bottom
 }
 
 impl Display for RelativePosition {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             RelativePosition::Right => write!(f, "right"),
+            RelativePosition::Bottom => write!(f, "bottom"),
         }
     }
 }
@@ -357,7 +450,7 @@ impl Display for ChildLayout {
 }
 
 pub struct StyleBuilder {
-    base_style: BaseStyle,
+    base_style: Option<BaseStyle>,
     stroke_color: Option<()>,
     stroke_width: Option<u32>,
     fill_color: Option<()>,
@@ -380,13 +473,23 @@ pub struct StyleBuilder {
     resize_parent_max: Option<u32>,
     resize_last: Option<bool>,
     collapsible: Option<bool>,
-    margin_bottom: Option<u32>
+    margin_bottom: Option<u32>,
+    shape: Option<Shape>,
+    vertical_label_position: Option<RelativePosition>,
+    html: Option<bool>,
+    outline_connect: Option<bool>,
+    rounded: Option<bool>,
+    white_space: Option<WhiteSpace>,
+    entryx: Option<f64>,
+    entryy: Option<f64>,
+    entrydx: Option<f64>,
+    entrydy: Option<f64>,
 }
 
 impl StyleBuilder {
-    pub fn new(base_style: BaseStyle) -> StyleBuilder {
+    pub fn new() -> StyleBuilder {
         StyleBuilder {
-            base_style,
+            base_style: None,
             stroke_color: None,
             stroke_width: None,
             fill_color: None,
@@ -410,7 +513,23 @@ impl StyleBuilder {
             resize_last: None,
             collapsible: None,
             margin_bottom: None,
+            shape: None,
+            vertical_label_position: None,
+            html: None,
+            outline_connect: None,
+            rounded: None,
+            white_space: None,
+            entryx: None,
+            entryy: None,
+            entrydx: None,
+            entrydy: None,
         }
+    }
+
+    pub fn with_base_style(mut self, base_style: BaseStyle) -> Self {
+        self.base_style = Some(base_style);
+
+        self
     }
 
     pub fn with_stroke_color(mut self, stroke_color: ()) -> Self {
@@ -578,5 +697,65 @@ impl StyleBuilder {
             collapsible: self.collapsible,
             margin_bottom: self.margin_bottom,
         }
+    }
+
+    fn with_shape(mut self, shape: Shape) -> Self {
+        self.shape = Some(shape);
+
+        self
+    }
+
+    fn with_vertical_label_position(mut self, vertical_label_position: RelativePosition) -> Self {
+        self.vertical_label_position = Some(vertical_label_position);
+
+        self
+    }
+
+    fn with_html(mut self, html: bool) -> Self {
+        self.html = Some(html);
+
+        self
+    }
+
+    fn with_outline_connect(mut self, outline_connect: bool) -> Self {
+        self.outline_connect = Some(outline_connect);
+
+        self
+    }
+
+    fn with_rounded(mut self, rounded: bool) -> Self {
+        self.rounded = Some(rounded);
+
+        self
+    }
+
+    fn with_white_space(mut self, white_space: WhiteSpace) -> Self {
+        self.white_space = Some(white_space);
+
+        self
+    }
+
+    fn with_entryx(mut self, entryx: f64) -> Self {
+        self.entryx = Some(entryx);
+
+        self
+    }
+
+    fn with_entryy(mut self, entryy: f64) -> Self {
+        self.entryy = Some(entryy);
+
+        self
+    }
+
+    fn with_entrydx(mut self, entrydx: f64) -> Self {
+        self.entrydx = Some(entrydx);
+
+        self
+    }
+
+    fn with_entrydy(mut self, entrydy: f64) -> Self {
+        self.entrydy = Some(entrydy);
+
+        self
     }
 }
