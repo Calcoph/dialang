@@ -20,6 +20,7 @@ fn main() {
         exit(0)
     }
 
+    println!("Reading from {:?}", opt.input_path);
     let input = std::fs::read_to_string(opt.input_path).unwrap();
     let (tokens, _) = diaparser::tokenize(&input);
 
@@ -54,6 +55,7 @@ fn main() {
     };
 
     let file = format!(include_str!("../../templates/doc.xml"), seq_diag=seq_diag, comm_diag=comm_diag, class_diag=class_diag);
+    println!("Results written to {:?}", opt.output_path);
     std::fs::write(opt.output_path, file).unwrap();
 }
 
