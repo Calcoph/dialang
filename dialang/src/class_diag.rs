@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use inline_xml::{xml_tag, Tag};
 
-use crate::{Class, Attribute, Method, style::{Style, BaseStyle, Alignment, VerticalAlignment}};
+use crate::{clean_ast::{Attribute, Class, Method}, style::Style};
 
 const START_HEIGHT: u32 = 26;
 const ATTR_HEIGHT: u32 = 26;
@@ -10,14 +10,14 @@ const SEPARATOR_HEIGHT: u32 = 8;
 const METHOD_HEIGHT: u32 = 26;
 const CLASS_WIDTH: u32 = 230;
 
-pub(crate) fn make_class_diag(classes: HashMap<String, Class>) -> Vec<String> {
+pub(crate) fn make_class_diag(classes: &HashMap<String, Class>) -> Vec<String> {
     let mut id = 2;
     let mut y = 25;
 
     class_diag_from_classes(&mut id, &mut y, classes)
 }
 
-fn class_diag_from_classes(id: &mut u32, y: &mut u32, classes: HashMap<String, Class>) -> Vec<String> {
+fn class_diag_from_classes(id: &mut u32, y: &mut u32, classes: &HashMap<String, Class>) -> Vec<String> {
     const Y_PADDING: u32 = 30;
     const X_PADDING: u32 = 15;
     let mut ret = Vec::new();

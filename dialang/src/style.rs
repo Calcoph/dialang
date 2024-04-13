@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::fmt::{write, Display};
 
 #[derive(Debug, Clone)]
 pub struct Style {
@@ -25,7 +25,17 @@ pub struct Style {
     resize_parent_max: Option<u32>,
     resize_last: Option<bool>,
     collapsible: Option<bool>,
-    margin_bottom: Option<u32>
+    margin_bottom: Option<u32>,
+    shape: Option<Shape>,
+    vertical_label_position: Option<RelativePosition>,
+    html: Option<bool>,
+    outline_connect: Option<bool>,
+    rounded: Option<bool>,
+    white_space: Option<WhiteSpace>,
+    entryx: Option<f64>,
+    entryy: Option<f64>,
+    entrydx: Option<f64>,
+    entrydy: Option<f64>,
 }
 
 impl Style {
@@ -67,6 +77,14 @@ impl Style {
                     string += &format!("fillColor=none;")
                 }
             }
+        }
+
+        if let Some(shape) = self.shape {
+            string += &format!("shape={shape};")
+        }
+
+        if let Some(vertical_label_position) = self.vertical_label_position {
+            string += &format!("verticalLabelPosition={vertical_label_position};")
         }
 
         if let Some(alignment) = self.alignment {
@@ -159,6 +177,24 @@ impl Style {
 
         if let Some(margin_bottom) = self.margin_bottom {
             string += &format!("marginBottom={margin_bottom};")
+        }
+
+        if let Some(html) = self.html {
+            let html = if html {
+                1
+            } else {
+                0
+            };
+            string += &format!("html={html};")
+        }
+
+        if let Some(outline_connect) = self.outline_connect {
+            let outline_connect = if outline_connect {
+                1
+            } else {
+                0
+            };
+            string += &format!("outlineConnect={outline_connect};")
         }
 
         string
@@ -312,6 +348,14 @@ pub enum WhiteSpace {
 #[derive(Debug, Clone, Copy)]
 pub enum Shape {
     UMLActor
+}
+
+impl Display for Shape {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Shape::UMLActor => write!(f, "umlActor"),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -696,6 +740,16 @@ impl StyleBuilder {
             resize_last: self.resize_last,
             collapsible: self.collapsible,
             margin_bottom: self.margin_bottom,
+            shape: self.shape,
+            vertical_label_position: self.vertical_label_position,
+            html: self.html,
+            outline_connect: self.outline_connect,
+            rounded: self.rounded,
+            white_space: self.white_space,
+            entryx: self.entryx,
+            entryy: self.entryy,
+            entrydx: self.entrydx,
+            entrydy: self.entrydy,
         }
     }
 

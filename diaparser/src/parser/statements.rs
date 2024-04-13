@@ -1,9 +1,9 @@
 use std::{ops::Range, io::ErrorKind};
 
-use nom::{combinator::{map_res, opt}, bytes::complete::{tag, take}, sequence::{tuple, delimited, pair, preceded, terminated}, multi::{many0, separated_list0}};
+use nom::{branch::alt as choice, bytes::complete::{tag, take}, combinator::{map, map_res, opt}, multi::{many0, separated_list0}, sequence::{delimited, pair, preceded, terminated, tuple}};
 use nom_supreme::{error::{ErrorTree, BaseErrorKind}, ParserExt};
 
-use crate::{token::{Tokens, Spanned, Token, Keyword}, recovery_err::{TokResult, expression_recovery, non_opt}, Expr, combinators::{map_with_span, spanned}, Class, Method, ParserError, Attribute};
+use crate::{combinators::{map_with_span, spanned}, recovery_err::{expression_recovery, non_opt, TokResult}, token::{Keyword, Spanned, Token, Tokens}, AnnotatedBlock, Annotation, Assignment, Attribute, Class, Expr, FuncCall, Method, ParserError, SequenceEntrypointBlock, TopLevelStatement};
 
 pub(crate) fn ident<'a, 'b>(input: Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned<String>> {
     map_res(
@@ -70,7 +70,7 @@ fn method_definition<'a, 'b>(input: Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned
     )(input)
 }
 
-fn func_call<'a, 'b>(input: Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned<Expr>> {
+fn func_call<'a, 'b>(input: Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned<FuncCall>> {
     map_with_span(
         tuple((
             ident,
@@ -84,7 +84,7 @@ fn func_call<'a, 'b>(input: Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned<Expr>> 
                 tag(Token::Separator(')'))
             )
         )),
-        |(root, access, args), span| (Expr::FuncCall {
+        |(root, access, args), span| (FuncCall {
             root,
             access,
             args
@@ -108,14 +108,14 @@ fn method_body<'a, 'b>(input: Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned<Expr>
                 )),
                 func_call
             ),
-            |(assignment, f_call), span| {
+            |(assignment, (f_call, f_call_span)), span| {
                 match assignment {
-                    Some((assignment, r#type)) => (Expr::Assignment {
+                    Some((assignment, r#type)) => (Expr::Assignment(Box::new(Assignment {
                         name: assignment,
-                        expr: Box::new(f_call),
+                        expr: (Expr::FuncCall(Box::new(f_call)), f_call_span),
                         r#type: r#type,
-                    }, span),
-                    None => f_call
+                    })), span),
+                    None => (Expr::FuncCall(Box::new(f_call)), span)
                 }
             }
         )),
@@ -147,9 +147,30 @@ fn class_definition<'a, 'b>(input: Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned<
     )(input)
 }
 
-pub(crate) fn statements<'a, 'b>(input: Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned<Result<Vec<Spanned<Class>>, ParserError>>> {
+fn annotation_entrypoint<'a, 'b>(input: Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned<SequenceEntrypointBlock>> {
+    map_with_span(
+        preceded(
+            tag(Token::A(Annotation::SequenceEntrypoint)).context("tag sequence_entrypoint"),
+            func_call
+        ),
+        |func_call, span| (SequenceEntrypointBlock {
+            function: func_call
+        }, span)
+    )(input)
+}
+
+fn annotation_block<'a, 'b>(input: Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned<AnnotatedBlock>> {
+    choice((
+        map(annotation_entrypoint, |(entry_point_block, span)| (AnnotatedBlock::SequenceEntrypoint(entry_point_block), span)),
+    ))(input)
+}
+
+pub(crate) fn statements<'a, 'b>(input: Tokens<'a, 'b>) -> TokResult<'a, 'b, Spanned<Result<Vec<Spanned<TopLevelStatement>>, ParserError>>> {
     expression_recovery(map_with_span(
-        many0(class_definition),
+        many0(choice((
+            map(class_definition, |(class, s)| (TopLevelStatement::Class(class), s)),
+            map(annotation_block, |(annotated, s)| (TopLevelStatement::AnnotatedBlock(annotated), s)),
+        ))),
         |v, span| (
                     Ok(v),
                     span

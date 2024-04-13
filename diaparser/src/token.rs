@@ -3,7 +3,7 @@ use std::{ops::Range, iter::{Enumerate, Copied}, slice::Iter, fmt::{self, Displa
 use nom::{Compare, CompareResult, InputLength, InputIter, InputTake, Needed};
 use nom_locate::LocatedSpan;
 
-use crate::recovery_err::{ParseState, ToRange};
+use crate::{recovery_err::{ParseState, ToRange}, Annotation};
 
 #[derive(Clone, Debug, Copy, PartialEq)]
 pub enum Token<'a> {
@@ -12,7 +12,8 @@ pub enum Token<'a> {
     Ident(&'a str),
     Separator(char),
     Comment(&'a str),
-    Err
+    Err,
+    A(Annotation),
 }
 
 impl Token<'_> {
@@ -41,6 +42,9 @@ impl<'a> fmt::Display for Token<'a> {
             },
             Token::Comment(s) => write!(f, "{}", s),
             Token::Err => write!(f, "Err"),
+            Token::A(a) => match a {
+                Annotation::SequenceEntrypoint => write!(f, "@SequenceEntrypoint"),
+            },
         }
     }
 }

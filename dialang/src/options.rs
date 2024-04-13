@@ -14,7 +14,7 @@ pub(crate) struct Options {
 impl Default for Options {
     fn default() -> Options {
         Options {
-            class_diag: true,
+            class_diag: false,
             eval: true,
             comm_diag: false,
             seq_diag: false,

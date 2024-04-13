@@ -1,6 +1,19 @@
+use std::collections::HashMap;
+
 use inline_xml::{xml_tag, Tag};
 
-use crate::style::Style;
+use crate::{clean_ast::Class, style::Style};
+
+pub(crate) fn make_seq_diag(classes: &HashMap<String, Class>) -> Vec<String> {
+    let mut id = 2;
+    let mut y = 25;
+
+    seq_diag_from_classes(&mut id, &mut y, classes)
+}
+
+fn seq_diag_from_classes(id: &mut u32, y: &mut u32, classes: &HashMap<String, Class>) -> Vec<String> {
+    vec![make_actor(&id.to_string(), "comm-diag-1").to_string()]
+}
 
 fn make_actor(id: &str, parent: &str) -> Tag {
     let value = "Actor";

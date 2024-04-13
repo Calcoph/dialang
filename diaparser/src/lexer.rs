@@ -14,7 +14,8 @@ use nom::{
     combinator::{
         recognize,
         eof,
-        map
+        map,
+        map_opt
     },
     sequence::{pair, preceded, delimited},
     multi::{
@@ -24,7 +25,7 @@ use nom::{
 };
 use nom_supreme::error::{GenericErrorTree, ErrorTree};
 
-use crate::{recovery_err::{StrResult, StrSpan, RecoveredError, ParseState, ToRange}, token::{TokSpan, FromStrSpan, Token, Keyword}};
+use crate::{recovery_err::{ParseState, RecoveredError, StrResult, StrSpan, ToRange}, token::{FromStrSpan, Keyword, TokSpan, Token}, Annotation};
 
 fn lexer<'a, 'b>(input: StrSpan<'a, 'b>) -> StrResult<StrSpan<'a, 'b>, Vec<TokSpan<'a, 'b>>> {
     // A parser for operators
@@ -55,6 +56,21 @@ fn lexer<'a, 'b>(input: StrSpan<'a, 'b>) -> StrResult<StrSpan<'a, 'b>, Vec<TokSp
                 state,
                 s.span()
             )
+        }
+    );
+
+    let annotation = map_opt(
+        preceded(
+            tag("@"),
+            tag("SequenceEntrypoint"),
+        ),
+        |s: StrSpan| {
+            let token = match *s.fragment() {
+                "SequenceEntrypoint" => Some(Token::A(Annotation::SequenceEntrypoint)),
+                _ => None
+            };
+            let state = s.extra;
+            token.map(|token| TokSpan::from_strspan(token, state, s.span()))
         }
     );
 
@@ -99,6 +115,7 @@ fn lexer<'a, 'b>(input: StrSpan<'a, 'b>) -> StrResult<StrSpan<'a, 'b>, Vec<TokSp
         raw,
         op,
         ctrl,
+        annotation,
         ident,
     ));
 
